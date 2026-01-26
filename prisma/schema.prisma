@@ -1,0 +1,83 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  country   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  type        String   // "OFFER" or "INVOICE"
+  number      String   @unique
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  date        DateTime
+  dueDate     DateTime?
+  lineItems   LineItem[]
+  subtotal    Float    @default(0)
+  tax         Float    @default(0)
+  total       Float    @default(0)
+  notes       String?
+  status      String   @default("DRAFT") // "DRAFT", "SENT", "ACCEPTED", "REJECTED"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([type])
+}
+
+model LineItem {
+  id         String   @id @default(cuid())
+  description String
+  quantity   Decimal
+  unitPrice  Decimal
+  amount     Decimal
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+}
+
+model Counter {
+  id    String @id @default(cuid())
+  type  String @unique // "OFFER" or "INVOICE"
+  year  Int
+  count Int    @default(0)
+
+  @@unique([type, year])
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  description String
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
