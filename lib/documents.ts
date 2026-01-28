@@ -9,6 +9,7 @@ export interface CreateDocumentInput {
   clientId: string
   date: Date
   dueDate?: Date
+  taxRate?: number
   lineItems: Array<{
     description: string
     quantity: number
@@ -20,6 +21,7 @@ export interface UpdateDocumentInput {
   clientId?: string
   date?: Date
   dueDate?: Date
+  taxRate?: number
   lineItems?: Array<{
     id?: string
     description: string
@@ -28,12 +30,28 @@ export interface UpdateDocumentInput {
   }>
 }
 
-function calculateTotals(lineItems: Array<{ quantity: number; unitPrice: number }>) {
+const DEFAULT_INVOICE_DUE_DAYS = 15
+const DEFAULT_TAX_RATE = 21
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+function resolveInvoiceDueDate(date: Date, dueDate?: Date): Date {
+  return dueDate ?? addDays(date, DEFAULT_INVOICE_DUE_DAYS)
+}
+
+function calculateTotals(
+  lineItems: Array<{ quantity: number; unitPrice: number }>,
+  taxRate: number
+) {
   const subtotal = lineItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   )
-  const tax = subtotal * 0.21 // 21% VAT
+  const tax = subtotal * (taxRate / 100)
   const total = subtotal + tax
 
   return {
@@ -44,10 +62,16 @@ function calculateTotals(lineItems: Array<{ quantity: number; unitPrice: number 
 }
 
 export async function createDocument(input: CreateDocumentInput) {
-  const { subtotal, tax, total } = calculateTotals(input.lineItems)
+  const taxRate = input.taxRate ?? DEFAULT_TAX_RATE
+  const { subtotal, tax, total } = calculateTotals(input.lineItems, taxRate)
 
   // Generate document number
   const number = await generateDocumentNumber(input.type, input.date)
+
+  const resolvedDueDate =
+    input.type === 'INVOICE'
+      ? resolveInvoiceDueDate(input.date, input.dueDate)
+      : input.dueDate
 
   // Create document with line items in a transaction
   const document = await prisma.document.create({
@@ -55,8 +79,9 @@ export async function createDocument(input: CreateDocumentInput) {
       type: input.type,
       number,
       date: input.date,
-      dueDate: input.dueDate,
+      dueDate: resolvedDueDate,
       clientId: input.clientId,
+      taxRate,
       subtotal,
       tax,
       total,
@@ -101,7 +126,8 @@ export async function updateDocument(id: string, input: UpdateDocumentInput) {
     unitPrice: parseFloat(li.unitPrice.toString()),
   }))
 
-  const { subtotal, tax, total } = calculateTotals(lineItems)
+  const taxRate = input.taxRate ?? document.taxRate ?? DEFAULT_TAX_RATE
+  const { subtotal, tax, total } = calculateTotals(lineItems, taxRate)
 
   // Update document and line items in a transaction
   const updated = await prisma.$transaction(async (tx) => {
@@ -117,6 +143,7 @@ export async function updateDocument(id: string, input: UpdateDocumentInput) {
         clientId: input.clientId ?? document.clientId,
         date: input.date ?? document.date,
         dueDate: input.dueDate ?? document.dueDate,
+        taxRate,
         subtotal,
         tax,
         total,
@@ -165,6 +192,42 @@ export async function deleteDocument(id: string) {
   })
 }
 
+export async function deleteInvoice(id: string) {
+  const document = await prisma.document.findUnique({
+    where: { id },
+  })
+
+  if (!document) {
+    throw new Error('Document not found')
+  }
+
+  if (document.type !== 'INVOICE') {
+    throw new Error('Only invoices can be deleted')
+  }
+
+  await prisma.document.delete({
+    where: { id },
+  })
+}
+
+export async function deleteOffer(id: string) {
+  const document = await prisma.document.findUnique({
+    where: { id },
+  })
+
+  if (!document) {
+    throw new Error('Document not found')
+  }
+
+  if (document.type !== 'OFFER') {
+    throw new Error('Only offers can be deleted')
+  }
+
+  await prisma.document.delete({
+    where: { id },
+  })
+}
+
 export async function convertOfferToInvoice(offerId: string, dueDate?: Date) {
   return await prisma.$transaction(async (tx) => {
     // Get the offer with all related data
@@ -191,14 +254,21 @@ export async function convertOfferToInvoice(offerId: string, dueDate?: Date) {
     // Generate new invoice number
     const invoiceNumber = await generateDocumentNumber('INVOICE', new Date())
 
+    const invoiceDate = new Date()
+    const resolvedDueDate = resolveInvoiceDueDate(
+      invoiceDate,
+      dueDate || (offer.dueDate ? new Date(offer.dueDate) : undefined)
+    )
+
     // Create invoice from offer
     const invoice = await tx.document.create({
       data: {
         type: 'INVOICE',
         number: invoiceNumber,
-        date: new Date(),
-        dueDate: dueDate || (offer.dueDate ? new Date(offer.dueDate) : undefined),
+        date: invoiceDate,
+        dueDate: resolvedDueDate,
         clientId: offer.clientId,
+        taxRate: offer.taxRate ?? DEFAULT_TAX_RATE,
         subtotal: offer.subtotal,
         tax: offer.tax,
         total: offer.total,

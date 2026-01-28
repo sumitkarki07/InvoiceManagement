@@ -21,10 +21,13 @@ model Client {
   email     String?
   phone     String?
   address   String?
+  street    String?
   city      String?
   state     String?
   zipCode   String?
+  postcode  String?
   country   String?
+  vatNumber String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -41,6 +44,7 @@ model Document {
   dueDate     DateTime?
   lineItems   LineItem[]
   subtotal    Float    @default(0)
+  taxRate     Float    @default(21)
   tax         Float    @default(0)
   total       Float    @default(0)
   notes       String?

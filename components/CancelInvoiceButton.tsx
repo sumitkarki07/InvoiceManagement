@@ -11,14 +11,14 @@ export default function CancelInvoiceButton({ invoiceId }: CancelInvoiceButtonPr
     <form action={cancelInvoiceAction.bind(null, invoiceId)}>
       <button
         type="submit"
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+        className="inline-flex items-center rounded-full border border-transparent bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
         onClick={(e) => {
-          if (!confirm('Are you sure you want to cancel this invoice?')) {
+          if (!confirm('Weet je zeker dat je deze factuur wilt annuleren?')) {
             e.preventDefault()
           }
         }}
       >
-        Cancel Invoice
+        Factuur annuleren
       </button>
     </form>
   )

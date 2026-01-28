@@ -12,6 +12,7 @@ interface InvoiceTemplateProps {
   invoiceNumber: string
   date: string
   dueDate: string
+  taxRate?: number
   clientName: string
   clientStreet?: string
   clientCity?: string
@@ -35,6 +36,7 @@ export default function InvoiceTemplate({
   invoiceNumber,
   date,
   dueDate,
+  taxRate = 21,
   clientName,
   clientStreet,
   clientCity,
@@ -140,12 +142,13 @@ export default function InvoiceTemplate({
           <div className="uppercase text-sm font-bold mb-4" style={{ letterSpacing: '0.05em' }}>
             Klant
           </div>
-          <div className="space-y-1" style={{ lineHeight: '1.6' }}>
-            <div className="text-sm font-medium">{clientName}</div>
-            {clientStreet && <div className="text-sm">{clientStreet}</div>}
-            {clientPostcode && clientCity && <div className="text-sm">{clientPostcode} {clientCity}</div>}
-            {clientPhone && <div className="text-sm">{clientPhone}</div>}
-          </div>
+        <div className="space-y-1" style={{ lineHeight: '1.6' }}>
+          <div className="text-sm font-medium">{clientName}</div>
+          {clientStreet && <div className="text-sm">{clientStreet}</div>}
+          {clientPostcode && clientCity && <div className="text-sm">{clientPostcode} {clientCity}</div>}
+          {clientPhone && <div className="text-sm">{clientPhone}</div>}
+          {clientVatNumber && <div className="text-sm">BTW nummer: {clientVatNumber}</div>}
+        </div>
         </div>
 
         {/* Line Items Table */}
@@ -181,7 +184,7 @@ export default function InvoiceTemplate({
                 <span>€ {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm py-2">
-                <span>BTW (21%)</span>
+                <span>BTW ({taxRate}%)</span>
                 <span>€ {tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold py-3 border-t-2 border-gray-800">
@@ -205,14 +208,11 @@ export default function InvoiceTemplate({
         {/* Payment Section */}
         <div className="px-20 py-8" style={{ paddingLeft: '25mm', paddingRight: '25mm' }}>
           <div className="text-xs space-y-2">
-            <div className="font-medium">
-              Betaling dient binnen 14 dagen te worden verricht
+            <div className="font-bold">
+              OGM te vermelden bij betaling: Factuur No. {invoiceNumber}
             </div>
-            <div className="text-gray-700">
-              Gegevens voor overschrijving:<br />
-              Rekeningnummer: NL91 ABNA 0123 4567 89<br />
-              Naam begunstigde: {companyName}<br />
-              Referentie: {invoiceNumber}
+            <div className="font-bold">
+              Gelieve het bedrag van € {total.toFixed(2)} te betalen voor {formatDate(dueDate)}
             </div>
           </div>
         </div>

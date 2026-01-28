@@ -97,11 +97,13 @@ export default function InvoicePrintPage({ params }: { params: Promise<{ id: str
           invoiceNumber={document.number}
           date={document.date}
           dueDate={document.dueDate || document.date}
+          taxRate={document.taxRate}
           clientName={document.client.name}
-          clientStreet={document.client.address}
+          clientStreet={document.client.street || document.client.address}
           clientCity={document.client.city}
-          clientPostcode={document.client.zipCode}
+          clientPostcode={document.client.postcode || document.client.zipCode}
           clientPhone={document.client.phone}
+          clientVatNumber={document.client.vatNumber}
           items={document.lineItems.map((item: any) => ({
             description: item.description,
             quantity: item.quantity,

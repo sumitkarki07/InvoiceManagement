@@ -7,8 +7,8 @@ export type DocumentType = 'OFFER' | 'INVOICE'
  * Uses row-level locking to prevent race conditions.
  * 
  * Format:
- * - OFFER: OFF-YYYY-001
- * - INVOICE: INV-YYYY-001
+ * - OFFER: YYYY-001
+ * - INVOICE: YYYY-001
  */
 export async function generateDocumentNumber(
   type: DocumentType,
@@ -16,7 +16,6 @@ export async function generateDocumentNumber(
 ): Promise<string> {
   const year = date.getFullYear()
   const counterType = type === 'OFFER' ? 'OFFER' : 'INVOICE'
-  const prefix = type === 'OFFER' ? 'OFF' : 'INV'
 
   // Use a transaction with Serializable isolation level for row-level locking
   return await prisma.$transaction(async (tx) => {
@@ -61,10 +60,31 @@ export async function generateDocumentNumber(
       },
     })
 
-    // Format: PREFIX-YYYY-XXX (with leading zeros)
+    // Format: YYYY-XXX (with leading zeros)
     const sequenceStr = updated.count.toString().padStart(3, '0')
-    return `${prefix}-${year}-${sequenceStr}`
+    return `${year}-${sequenceStr}`
   }, {
     isolationLevel: 'Serializable',
   })
+}
+
+export async function getNextDocumentNumberPreview(
+  type: DocumentType,
+  date: Date = new Date()
+): Promise<string> {
+  const year = date.getFullYear()
+  const counterType = type === 'OFFER' ? 'OFFER' : 'INVOICE'
+
+  const counter = await prisma.counter.findUnique({
+    where: {
+      type_year: {
+        type: counterType,
+        year,
+      },
+    },
+  })
+
+  const nextCount = (counter?.count ?? 0) + 1
+  const sequenceStr = nextCount.toString().padStart(3, '0')
+  return `${year}-${sequenceStr}`
 }

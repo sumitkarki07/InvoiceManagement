@@ -30,9 +30,12 @@ async function main() {
       email: 'contact@sampleclient.com',
       phone: '+31 20 1234567',
       address: '123 Main Street',
+      street: '123 Main Street',
       city: 'Amsterdam',
       zipCode: '1000 AA',
+      postcode: '1000 AA',
       country: 'Netherlands',
+      vatNumber: 'NL123456789B01',
     },
   })
 

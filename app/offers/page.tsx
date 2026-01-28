@@ -2,78 +2,122 @@ import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import Layout from '@/components/Layout'
 import Link from 'next/link'
+import DeleteOfferButton from '@/components/DeleteOfferButton'
 
-export default async function OffersPage() {
+export default async function OffersPage({
+  searchParams,
+}: {
+  searchParams?: { q?: string }
+}) {
   await requireAuth()
 
+  const query = searchParams?.q?.trim()
   const offers = await prisma.document.findMany({
-    where: { type: 'OFFER' },
+    where: {
+      type: 'OFFER',
+      ...(query
+        ? {
+            OR: [
+              { number: { contains: query, mode: 'insensitive' } },
+              { client: { name: { contains: query, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    },
     include: { client: true },
     orderBy: { createdAt: 'desc' },
   })
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-amber-900">Offerte historie</h1>
+            <p className="mt-1 text-sm text-amber-800">Overzicht van opgeslagen offertes.</p>
+          </div>
           <Link
             href="/offers/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            className="inline-flex items-center rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-50"
           >
-            New Offer
+            Terug naar offerte
           </Link>
         </div>
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {offers.length === 0 ? (
-              <li className="px-6 py-4 text-center text-gray-500">
-                No offers yet. Create your first offer to get started.
-              </li>
-            ) : (
-              offers.map((offer) => (
-                <li key={offer.id}>
-                  <Link
-                    href={`/offers/${offer.id}`}
-                    className="block hover:bg-gray-50 px-6 py-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div>
-                          <p className="text-sm font-medium text-indigo-600">{offer.number}</p>
-                          <p className="text-sm text-gray-500">{offer.client.name}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">
-                            € {parseFloat(offer.total.toString()).toFixed(2)}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(offer.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              offer.status === 'DRAFT'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : offer.status === 'CONVERTED'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
+        <div className="rounded-2xl border border-amber-100 bg-white p-6 shadow-sm">
+          <form className="mb-6 flex flex-wrap items-end gap-3" method="get">
+            <div className="flex flex-col">
+              <label className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                Zoeken
+              </label>
+              <input
+                type="text"
+                name="q"
+                defaultValue={query}
+                placeholder="Offertenummer of klantnaam"
+                className="mt-2 w-72 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-50"
+            >
+              Zoeken
+            </button>
+          </form>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-amber-100 bg-amber-50/60 text-amber-900">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Offertenummer</th>
+                  <th className="px-4 py-3 font-semibold">Datum</th>
+                  <th className="px-4 py-3 font-semibold">Vervaldatum</th>
+                  <th className="px-4 py-3 font-semibold">Klant</th>
+                  <th className="px-4 py-3 font-semibold text-right">Totaal</th>
+                  <th className="px-4 py-3 font-semibold text-right">Acties</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100">
+                {offers.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-6 text-center text-amber-700" colSpan={6}>
+                      Geen offertes gevonden.
+                    </td>
+                  </tr>
+                ) : (
+                  offers.map((offer) => (
+                    <tr key={offer.id} className="text-amber-900">
+                      <td className="px-4 py-3 font-semibold">{offer.number}</td>
+                      <td className="px-4 py-3">{new Date(offer.date).toLocaleDateString('nl-NL')}</td>
+                      <td className="px-4 py-3">
+                        {offer.dueDate ? new Date(offer.dueDate).toLocaleDateString('nl-NL') : '-'}
+                      </td>
+                      <td className="px-4 py-3">{offer.client.name}</td>
+                      <td className="px-4 py-3 text-right">
+                        € {parseFloat(offer.total.toString()).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex flex-wrap justify-end gap-3 text-sm">
+                          <Link href={`/offers/${offer.id}`} className="text-amber-800 hover:text-amber-900">
+                            Bewerken
+                          </Link>
+                          <a
+                            href={`/api/pdf/${offer.id}`}
+                            target="_blank"
+                            className="text-amber-800 hover:text-amber-900"
                           >
-                            {offer.status}
-                          </span>
+                            PDF
+                          </a>
+                          <DeleteOfferButton offerId={offer.id} label="Verwijderen" />
                         </div>
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              ))
-            )}
-          </ul>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </Layout>

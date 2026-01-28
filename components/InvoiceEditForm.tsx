@@ -23,6 +23,7 @@ interface InvoiceEditFormProps {
     clientId: string
     date: string
     dueDate?: string | null
+    taxRate?: number | null
     lineItems: Array<{
       id?: string
       description: string

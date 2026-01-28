@@ -62,6 +62,7 @@ export default async function OfferDetailPage({
               clientId: offer.clientId,
               date: offer.date.toISOString(),
               dueDate: offer.dueDate?.toISOString() || null,
+              taxRate: offer.taxRate ?? 21,
               lineItems: offer.lineItems.map((li) => ({
                 id: li.id,
                 description: li.description,
