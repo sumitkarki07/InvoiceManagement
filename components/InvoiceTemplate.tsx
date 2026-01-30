@@ -18,6 +18,7 @@ interface InvoiceTemplateProps {
   clientCity?: string
   clientPostcode?: string
   clientPhone?: string
+  clientVatNumber?: string
   items: LineItem[]
   subtotal: number
   tax: number

@@ -28,7 +28,7 @@ export async function GET(
       type: document.type,
       date: document.date.toISOString(),
       dueDate: document.dueDate?.toISOString() || null,
-      taxRate: document.taxRate ?? 21,
+      taxRate: document.taxRate,
       subtotal: parseFloat((document as any).subtotal?.toString() || '0'),
       tax: parseFloat((document as any).tax?.toString() || '0'),
       total: parseFloat((document as any).total?.toString() || '0'),
@@ -44,6 +44,7 @@ export async function GET(
         description: item.description,
         quantity: parseFloat(item.quantity?.toString() || '0'),
         unitPrice: parseFloat(item.unitPrice?.toString() || '0'),
+        amount: parseFloat(item.amount?.toString() || '0'),
       })),
     })
   } catch (error) {

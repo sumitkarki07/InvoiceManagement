@@ -82,9 +82,9 @@ export async function createDocument(input: CreateDocumentInput) {
       dueDate: resolvedDueDate,
       clientId: input.clientId,
       taxRate,
-      subtotal,
-      tax,
-      total,
+      subtotal: parseFloat(subtotal.toString()),
+      tax: parseFloat(tax.toString()),
+      total: parseFloat(total.toString()),
       lineItems: {
         create: input.lineItems.map((item) => ({
           description: item.description,
@@ -144,9 +144,9 @@ export async function updateDocument(id: string, input: UpdateDocumentInput) {
         date: input.date ?? document.date,
         dueDate: input.dueDate ?? document.dueDate,
         taxRate,
-        subtotal,
-        tax,
-        total,
+        subtotal: parseFloat(subtotal.toString()),
+        tax: parseFloat(tax.toString()),
+        total: parseFloat(total.toString()),
         lineItems: {
           create: lineItems.map((item) => ({
             description: item.description,

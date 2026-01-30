@@ -56,13 +56,15 @@ interface DocumentPDFProps {
 }
 
 // Helper to format numbers as Dutch currency
-function formatCurrency(amount: Decimal | number): string {
+function formatCurrency(amount: Decimal | number | undefined | null): string {
+  if (amount === undefined || amount === null) return '€ 0,00'
   const num = typeof amount === 'number' ? amount : parseFloat(amount.toString())
   return `€ ${num.toFixed(2).replace('.', ',')}`
 }
 
 // Helper to format numbers with Dutch decimal separator
-function formatNumber(num: Decimal | number): string {
+function formatNumber(num: Decimal | number | undefined | null): string {
+  if (num === undefined || num === null) return '0,00'
   const value = typeof num === 'number' ? num : parseFloat(num.toString())
   return value.toFixed(2).replace('.', ',')
 }

@@ -46,15 +46,15 @@ export async function GET(
       date: document.date,
       dueDate: document.dueDate,
       taxRate: document.taxRate ?? 21,
-      client: document.client,
-      lineItems: document.lineItems,
+      client: document.client as any,
+      lineItems: document.lineItems as any,
       subtotal: document.subtotal,
       tax: document.tax,
       total: document.total,
       logoDataUrl,
     })
 
-    const stream = await renderToStream(pdf)
+    const stream = await renderToStream(pdf as any)
 
     return new NextResponse(stream as any, {
       headers: {
