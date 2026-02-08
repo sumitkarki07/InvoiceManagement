@@ -43,9 +43,8 @@ A production-ready admin invoice and offer management system built with Next.js 
    ```bash
    npm run db:seed
    ```
-   This creates an admin user:
-   - Email: `admin@example.com`
-   - Password: `admin123`
+   - **Production:** Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` (or Vercel); the seed creates that admin.
+   - **Local dev:** If those are not set, the seed creates a dev admin: `admin@example.com` / `admin123`.
 
 5. **Run the development server:**
    ```bash
@@ -74,19 +73,47 @@ A production-ready admin invoice and offer management system built with Next.js 
 PDFs are generated using @react-pdf/renderer and match the exact invoice template provided. Access PDFs via:
 - `/api/pdf/[document-id]`
 
-## Deployment
+## Deployment (Vercel) – Production admin
 
-This application is ready for deployment on Vercel:
+For a live deployment, use real admin credentials via environment variables.
 
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy!
+### Required environment variables (Vercel)
 
-Make sure to:
-- Set `DATABASE_URL` to your production database
-- Set a strong `SESSION_SECRET`
-- Run migrations: `npx prisma migrate deploy`
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string (e.g. Supabase) |
+| `SESSION_SECRET` | Yes | Random secret for session cookies (e.g. `openssl rand -hex 32`) |
+| `ADMIN_EMAIL` | Yes* | Email for your admin login |
+| `ADMIN_PASSWORD` | Yes* | Password for your admin login |
+| `ALLOWED_ADMIN_EMAILS` | No | Comma-separated list of emails allowed to log in (optional whitelist) |
+
+\* For production, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` so the seed creates your real admin. If not set in production, no default admin is created.
+
+### One-time setup after deploy
+
+1. In Vercel: **Settings → Environment Variables** add:
+   - `DATABASE_URL` (your Supabase/Postgres URL)
+   - `SESSION_SECRET` (strong random string)
+   - `ADMIN_EMAIL` (e.g. your real email)
+   - `ADMIN_PASSWORD` (strong password you will use to log in)
+   - Optionally: `ALLOWED_ADMIN_EMAILS` = `your@email.com` (comma-separated if multiple)
+
+2. Deploy the app (Vercel will use these env vars).
+
+3. Create the admin user in the database by running the seed **once** with the same env vars. Either:
+   - **Option A:** In your project directory, set the same env vars locally and run:
+     ```bash
+     npm run db:seed
+     ```
+   - **Option B:** Use Vercel’s deploy hook or run the seed from a script that has access to `DATABASE_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
+
+4. Log in at `https://your-app.vercel.app/login` with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+### Security notes
+
+- **SESSION_SECRET** is required in production; the app will throw if it’s missing.
+- **ALLOWED_ADMIN_EMAILS**: If set, only these emails can log in (even if they exist in the database).
+- Do not rely on the default `admin@example.com` / `admin123` in production; that user is only created in development when `ADMIN_EMAIL`/`ADMIN_PASSWORD` are not set.
 
 ## License
 

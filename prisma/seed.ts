@@ -8,17 +8,40 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 async function main() {
-  // Create admin user
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      email: 'admin@example.com',
-      password: await hashPassword('admin123'),
-    },
-  })
+  // Admin: use real credentials from env in production (e.g. Vercel)
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+  const adminPassword = process.env.ADMIN_PASSWORD
 
-  console.log('Created admin user:', admin.email)
+  if (adminEmail && adminPassword) {
+    const admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { password: await hashPassword(adminPassword) },
+      create: {
+        email: adminEmail,
+        password: await hashPassword(adminPassword),
+      },
+    })
+    console.log('Created/updated admin user:', admin.email)
+  } else if (process.env.NODE_ENV !== 'production') {
+    // Development fallback: default admin (do not use in production)
+    const admin = await prisma.user.upsert({
+      where: { email: 'admin@example.com' },
+      update: {},
+      create: {
+        email: 'admin@example.com',
+        password: await hashPassword('admin123'),
+      },
+    })
+    console.log('Created dev admin user:', admin.email)
+  } else {
+    console.warn(
+      'No ADMIN_EMAIL/ADMIN_PASSWORD set. Set them in Vercel Environment Variables, then run: npm run db:seed'
+    )
+  }
+
+  // Reset invoice and offer number counters for fresh start (real use)
+  const deletedCounters = await prisma.counter.deleteMany({})
+  console.log('Reset document counters (invoice/offer numbers will start from 1):', deletedCounters.count, 'counter(s) removed')
 
   // Create sample client
   const client = await prisma.client.upsert({

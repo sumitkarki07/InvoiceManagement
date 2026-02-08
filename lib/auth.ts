@@ -4,7 +4,15 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 const SESSION_COOKIE_NAME = 'admin_session'
-const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production'
+
+/** In production, SESSION_SECRET must be set in env (e.g. Vercel). */
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET
+  if (process.env.NODE_ENV === 'production' && !secret) {
+    throw new Error('SESSION_SECRET is required in production. Set it in Vercel Environment Variables.')
+  }
+  return secret || 'change-me-in-development-only'
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12)
@@ -51,13 +59,34 @@ export async function requireAuth(): Promise<string> {
   return userId
 }
 
+/** Comma-separated list of allowed admin emails. If set, only these can log in. */
+function getAllowedAdminEmails(): string[] | null {
+  const raw = process.env.ALLOWED_ADMIN_EMAILS
+  if (!raw || raw.trim() === '') return null
+  return raw.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+}
+
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  // Enforce SESSION_SECRET in production
+  getSessionSecret()
+
+  const normalizedEmail = email.trim().toLowerCase()
+  if (!normalizedEmail) {
+    return { success: false, error: 'Invalid email or password' }
+  }
+
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
   })
 
   if (!user) {
     return { success: false, error: 'Invalid email or password' }
+  }
+
+  // Production: restrict to allowed admin list if set
+  const allowed = getAllowedAdminEmails()
+  if (allowed !== null && !allowed.includes(normalizedEmail)) {
+    return { success: false, error: 'Access denied. This account is not an admin.' }
   }
 
   const isValid = await verifyPassword(password, user.password)
