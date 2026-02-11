@@ -113,7 +113,7 @@ For a live deployment, use real admin credentials via environment variables.
 
 - **SESSION_SECRET** is required in production; the app will throw if it’s missing.
 - **ALLOWED_ADMIN_EMAILS**: If set, only these emails can log in (even if they exist in the database).
-- Do not rely on the default `admin@example.com` / `admin123` in production; that user is only created in development when `ADMIN_EMAIL`/`ADMIN_PASSWORD` are not set.
+
 
 ## License
 
