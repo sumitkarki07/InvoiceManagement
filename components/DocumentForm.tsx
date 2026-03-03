@@ -88,7 +88,7 @@ export default function DocumentForm({
     typeof initialData?.taxRate === 'number' ? initialData.taxRate : DEFAULT_TAX_RATE
   )
   const [lineItems, setLineItems] = useState<LineItem[]>(
-    initialData?.lineItems || [{ description: '', quantity: 0, unitPrice: 0 }]
+    initialData?.lineItems || [{ description: '', quantity: Number.NaN, unitPrice: Number.NaN }]
   )
 
   useEffect(() => {
@@ -119,11 +119,14 @@ export default function DocumentForm({
           : selectedDescription
         : item.description
 
+      const qty = Number.isFinite(item.quantity) ? (item.quantity as number) : 0
+      const price = Number.isFinite(item.unitPrice) ? (item.unitPrice as number) : 0
+
       if (item.id) formData.append(`lineItems[${index}].id`, item.id)
       if (item.selectedItemId) formData.append(`lineItems[${index}].itemId`, item.selectedItemId)
       formData.append(`lineItems[${index}].description`, descriptionToSave)
-      formData.append(`lineItems[${index}].quantity`, item.quantity.toString())
-      formData.append(`lineItems[${index}].unitPrice`, item.unitPrice.toString())
+      formData.append(`lineItems[${index}].quantity`, qty.toString())
+      formData.append(`lineItems[${index}].unitPrice`, price.toString())
     })
 
     const result = await onSubmit(formData)
@@ -137,7 +140,7 @@ export default function DocumentForm({
   }
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: '', quantity: 0, unitPrice: 0 }])
+    setLineItems([...lineItems, { description: '', quantity: Number.NaN, unitPrice: Number.NaN }])
   }
 
   const removeLineItem = (index: number) => {
@@ -164,7 +167,11 @@ export default function DocumentForm({
   }
 
   const calculateSubtotal = () => {
-    return lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    return lineItems.reduce((sum, item) => {
+      const qty = Number.isFinite(item.quantity) ? (item.quantity as number) : 0
+      const price = Number.isFinite(item.unitPrice) ? (item.unitPrice as number) : 0
+      return sum + qty * price
+    }, 0)
   }
 
   const calculateTax = () => {
@@ -425,10 +432,15 @@ export default function DocumentForm({
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-amber-900">Aantal</label>
                 <input
-                  type="text"
+                  type="number"
                   inputMode="decimal"
-                  value={item.quantity}
-                  onChange={(e) => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                  step="0.01"
+                  value={Number.isNaN(item.quantity) ? '' : item.quantity}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(',', '.')
+                    const numeric = raw === '' ? Number.NaN : parseFloat(raw)
+                    updateLineItem(index, 'quantity', numeric)
+                  }}
                   required
                   className="mt-1 block w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
@@ -438,8 +450,12 @@ export default function DocumentForm({
                 <input
                   type="number"
                   step="0.01"
-                  value={item.unitPrice}
-                  onChange={(e) => updateLineItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                  value={Number.isNaN(item.unitPrice) ? '' : item.unitPrice}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(',', '.')
+                    const numeric = raw === '' ? Number.NaN : parseFloat(raw)
+                    updateLineItem(index, 'unitPrice', numeric)
+                  }}
                   required
                   className="mt-1 block w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
@@ -479,7 +495,11 @@ export default function DocumentForm({
                   min="0"
                   name="taxRate"
                   value={Number.isNaN(taxRate) ? '' : taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(',', '.')
+                    const numeric = raw === '' ? Number.NaN : parseFloat(raw)
+                    setTaxRate(Number.isNaN(numeric) ? Number.NaN : numeric)
+                  }}
                   className="w-20 rounded-lg border border-amber-200 bg-white px-2 py-1 text-sm text-amber-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>

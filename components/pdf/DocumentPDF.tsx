@@ -55,18 +55,18 @@ interface DocumentPDFProps {
   logoDataUrl?: string
 }
 
-// Helper to format numbers as Dutch currency
+// Helper to format numbers as engineering-style currency (dot as decimal separator)
 function formatCurrency(amount: Decimal | number | undefined | null): string {
-  if (amount === undefined || amount === null) return '€ 0,00'
+  if (amount === undefined || amount === null) return '€ 0.00'
   const num = typeof amount === 'number' ? amount : parseFloat(amount.toString())
-  return `€ ${num.toFixed(2).replace('.', ',')}`
+  return `€ ${num.toFixed(2)}`
 }
 
-// Helper to format numbers with Dutch decimal separator
+// Helper to format numbers with dot as decimal separator
 function formatNumber(num: Decimal | number | undefined | null): string {
-  if (num === undefined || num === null) return '0,00'
+  if (num === undefined || num === null) return '0.00'
   const value = typeof num === 'number' ? num : parseFloat(num.toString())
-  return value.toFixed(2).replace('.', ',')
+  return value.toFixed(2)
 }
 
 // Helper to format date as YYYY-MM-DD

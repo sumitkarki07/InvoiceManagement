@@ -100,7 +100,7 @@ export default async function OffersPage({
                       <td className="px-4 py-3 text-right">
                         <div className="flex flex-wrap justify-end gap-3 text-sm">
                           <Link href={`/offers/${offer.id}`} className="text-amber-800 hover:text-amber-900">
-                            Bewerken
+                            Edit
                           </Link>
                           <a
                             href={`/api/pdf/${offer.id}`}
