@@ -39,9 +39,11 @@ async function main() {
     )
   }
 
-  // Reset invoice and offer number counters for fresh start (real use)
-  const deletedCounters = await prisma.counter.deleteMany({})
-  console.log('Reset document counters (invoice/offer numbers will start from 1):', deletedCounters.count, 'counter(s) removed')
+  // Reset only invoice number counter (leave offer counters as-is)
+  const deletedInvoiceCounters = await prisma.counter.deleteMany({
+    where: { type: 'INVOICE' },
+  })
+  console.log('Reset factuur counter (next invoice will start from 1):', deletedInvoiceCounters.count, 'counter(s) removed')
 
   // Create sample client
   const client = await prisma.client.upsert({
